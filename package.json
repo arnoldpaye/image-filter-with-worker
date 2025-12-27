@@ -1,5 +1,5 @@
 {
-  "name": "image-filtered",
+  "name": "image-filter-with-worker",
   "private": true,
   "version": "0.0.0",
   "type": "module",
