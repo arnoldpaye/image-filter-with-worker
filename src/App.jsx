@@ -1,9 +1,27 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 function App() {
   const [filteredImage, setFilteredImage] = useState(null);
+  const workerRef = useRef(null);
 
-  const workerRef = useRef(new Worker(new URL("./worker.js")), import.meta.url);
+  useEffect(() => {
+    // Initialize worker once
+    workerRef.current = new Worker(new URL("./worker.js", import.meta.url));
+
+    // Attach listener once
+    workerRef.current.onmessage = (event) => {
+      const { data } = event;
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d");
+      canvas.width = data.width;
+      canvas.height = data.height;
+      context.putImageData(data, 0, 0);
+      setFilteredImage(canvas.toDataURL());
+    };
+
+    // Cleanup worker on unmounting
+    return () => workerRef.current.terminate();
+  }, []);
 
   const handleFileUpload = (event) => {
     const file = event.target.files[0];
@@ -20,14 +38,6 @@ function App() {
       };
     };
     reader.readAsDataURL(file);
-  };
-
-  workerRef.current.onmessage = (event) => {
-    const { data } = event;
-    const canvas = document.createElement("canvas");
-    const context = canvas.getContext("2d");
-    context.putImageData(data, 0, 0);
-    setFilteredImage(canvas.toDataURL());
   };
 
   return (
