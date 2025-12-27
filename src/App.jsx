@@ -1,34 +1,41 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
-import "./App.css";
+import { useRef, useState } from "react";
 
 function App() {
-  const [count, setCount] = useState(0);
+  const [filteredImage, setFilteredImage] = useState(null);
+
+  const workerRef = useRef(new Worker(new URL("./worker.js")), import.meta.url);
+
+  const handleFileUpload = (event) => {
+    const file = event.target.files[0];
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.src = reader.result;
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const context = canvas.getContext("2d");
+        context.drawImage(img, 0, 0);
+        const imageData = context.getImageData(0, 0, img.width, img.height);
+        workerRef.current.postMessage({ imageData });
+      };
+    };
+    reader.readAsDataURL(file);
+  };
+
+  workerRef.current.onmessage = (event) => {
+    const { data } = event;
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
+    context.putImageData(data, 0, 0);
+    setFilteredImage(canvas.toDataURL());
+  };
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <div>
+      <h1>Image Filter App</h1>
+      <input type="file" onChange={handleFileUpload} />
+      {filteredImage && <img src={filteredImage} alt="Filtered Image" />}
+    </div>
   );
 }
 
