@@ -19,6 +19,9 @@ function App() {
       setFilteredImage(canvas.toDataURL());
     };
 
+    workerRef.current.onerror = (error) =>
+      console.error("Worker error: ", error);
+
     // Cleanup worker on unmounting
     return () => workerRef.current.terminate();
   }, []);
@@ -32,9 +35,11 @@ function App() {
       img.onload = () => {
         const canvas = document.createElement("canvas");
         const context = canvas.getContext("2d");
+        canvas.width = img.width;
+        canvas.height = img.height;
         context.drawImage(img, 0, 0);
         const imageData = context.getImageData(0, 0, img.width, img.height);
-        workerRef.current.postMessage({ imageData });
+        workerRef.current.postMessage({ imageData }, [imageData.data.buffer]);
       };
     };
     reader.readAsDataURL(file);

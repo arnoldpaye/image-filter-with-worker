@@ -1,7 +1,7 @@
 self.onmessage = (event) => {
   const { imageData } = event.data;
   const grayscaleImageData = applyGrayscaleFilter(imageData);
-  self.postMessage(grayscaleImageData);
+  self.postMessage(grayscaleImageData, [grayscaleImageData.data.buffer]);
 };
 
 function applyGrayscaleFilter(imageData) {
